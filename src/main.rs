@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 println!("Service UUID {}, primary: {}", service.uuid, service.primary);
                 for characteristic in service.characteristics {
                     if characteristic.properties.contains(CharPropFlags::WRITE_WITHOUT_RESPONSE) {
-                        peripheral.write(&characteristic, &"Hello, world".as_bytes(), WriteType::WithoutResponse).await?;
+                        peripheral.write(&characteristic, &"on".as_bytes(), WriteType::WithoutResponse).await?;
                     }
                 }
             }
