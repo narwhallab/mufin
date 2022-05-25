@@ -1,3 +1,3 @@
 fn main() {
-    node_bindgen::build::configure();
+    napi_build::setup();
 }

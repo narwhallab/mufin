@@ -9,7 +9,8 @@ crate-type=["cdylib"]
 
 [dependencies]
 btleplug = "0.9.2"
-node-bindgen = { version = "4.0" }
+napi = { version = "2", features=["async"] }
+napi-derive = "2"
 
 [build-dependencies]
-node-bindgen = { version = "4.0", features = ["build"] }
+napi-build = "1"

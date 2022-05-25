@@ -3,10 +3,14 @@ use std::time::Duration;
 use std::thread;
 use btleplug::api::{Central, Manager as _, Peripheral, ScanFilter, CharPropFlags, WriteType};
 use btleplug::platform::Manager;
-use node_bindgen::derive::node_bindgen;
+use napi_derive::napi;
 
-#[node_bindgen]
-async fn bluetooth() -> Result<(), Box<dyn Error>> {
+#[napi]
+pub async fn bluetooth() {
+    internal().await.expect("Error");
+}
+
+async fn internal() -> Result<(), Box<dyn Error>> {
     let manager = Manager::new().await?;
 
     let central = manager
