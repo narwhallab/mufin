@@ -1,11 +1,12 @@
 use std::error::Error;
 use std::time::Duration;
-use tokio::time;
+use std::thread;
 use btleplug::api::{Central, Manager as _, Peripheral, ScanFilter, CharPropFlags, WriteType};
 use btleplug::platform::Manager;
+use node_bindgen::derive::node_bindgen;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+#[node_bindgen]
+async fn bluetooth() -> Result<(), Box<dyn Error>> {
     let manager = Manager::new().await?;
 
     let central = manager
@@ -23,7 +24,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await
         .expect("Can't scan BLE adapter for connected devices...");
 
-    time::sleep(Duration::from_secs(10)).await; // Wait until the scan is done
+    thread::sleep(Duration::from_secs(10)); // Wait until the scan is done
 
     let peripherals = central.peripherals().await?;
     if peripherals.is_empty() {

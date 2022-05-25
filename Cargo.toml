@@ -3,6 +3,13 @@ name = "bluetooth"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name="bluetooth"
+crate-type=["cdylib"]
+
 [dependencies]
 btleplug = "0.9.2"
-tokio = { version = "1", features = ["full"] }
+node-bindgen = { version = "4.0" }
+
+[build-dependencies]
+node-bindgen = { version = "4.0", features = ["build"] }
