@@ -12,6 +12,8 @@
 ```js
 let addon = require('@narwhallab/mufin')
 
-addon.bluetooth()
+addon.bluetooth("<bluetooth address>", "Hello, World")  // Sends "Hello, World" to address
 ```
 
+## TODO
+- Reading from bluetooth
