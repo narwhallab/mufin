@@ -1,5 +1,5 @@
 {
-  "name": "mufin",
+  "name": "@narwhallab/mufin",
   "version": "1.0.0",
   "description": "***This will help you connect your IoT project with Naver Clova***",
   "main": "index.js",
