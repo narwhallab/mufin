@@ -11,6 +11,7 @@ jobs:
         with:
           node-version: '16'
       - name: Upload to NPM
+        continue-on-error: true
         uses: JS-DevTools/npm-publish@v1
         with:
           access: public
