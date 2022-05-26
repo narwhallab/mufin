@@ -13,7 +13,6 @@ jobs:
       - run: |
           sudo apt install libdbus-1-dev pkg-config
           npm install
-          npm run build
       - name: Upload to NPM
         uses: JS-DevTools/npm-publish@v1
         with:
