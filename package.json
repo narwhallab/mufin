@@ -1,0 +1,23 @@
+{
+  "name": "mufin",
+  "version": "1.0.0",
+  "description": "***This will help you connect your IoT project with Naver Clova***",
+  "main": "index.js",
+  "scripts": {
+    "build": "napi build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/narwhallab/mufin.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/narwhallab/mufin/issues"
+  },
+  "homepage": "https://github.com/narwhallab/mufin#readme",
+  "dependencies": {
+    "@napi-rs/cli": "^2.9.0"
+  }
+}
