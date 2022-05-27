@@ -19,7 +19,7 @@ lazy_static! {
 
 #[napi]
 pub fn init_logger() {
-    TermLogger::init(log::LevelFilter::Trace, Config::default(), simplelog::TerminalMode::Stdout, simplelog::ColorChoice::Auto).unwrap();
+    TermLogger::init(log::LevelFilter::Info, Config::default(), simplelog::TerminalMode::Stdout, simplelog::ColorChoice::Auto).unwrap();
 }
 
 #[napi]
