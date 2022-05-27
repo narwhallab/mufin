@@ -3,7 +3,7 @@ use std::str::FromStr;
 use std::time::Duration;
 use std::thread;
 use btleplug::api::{Central, Manager as _, Peripheral, ScanFilter, CharPropFlags, WriteType, BDAddr};
-use btleplug::platform::{Manager, PeripheralId};
+use btleplug::platform::{Manager, PeripheralId, Adapter};
 use napi_derive::napi;
 use log::info;
 use simplelog::{TermLogger, Config};
@@ -19,8 +19,8 @@ pub async fn bluetooth(address: String, message: String) {
     write_peripheral(&address, &message.as_bytes()).await.expect("Error");
 }
 
-pub async fn get_peripheral(address: &str) -> Result<impl Peripheral, Box<dyn Error>> {
-    let manager = Manager::new().await?;
+pub async fn get_adapter() -> Adapter {
+    let manager = Manager::new().await.expect("Could not fetch manager");
 
     let central = manager
         .adapters()
@@ -31,14 +31,28 @@ pub async fn get_peripheral(address: &str) -> Result<impl Peripheral, Box<dyn Er
         .expect("No adapters are available now...");    // Fetch first adapter
 
     central
+}
+
+#[napi]
+pub async fn scan() {
+    get_adapter().await
         .start_scan(ScanFilter::default())
         .await
         .expect("Can't scan BLE adapter for connected devices...");
 
+    thread::sleep(Duration::from_secs(5)); // Wait until the scan is done
+}
+
+#[napi]
+pub async fn get_peripheral(address: String) {
+    get_peripheral_internal(&address).await.expect("Error");
+}
+
+pub async fn get_peripheral_internal(address: &str) -> Result<impl Peripheral, Box<dyn Error>> {
+    let central = get_adapter().await;
+
     info!("Starting scan on {}...", central.adapter_info().await?);
         
-    thread::sleep(Duration::from_secs(5)); // Wait until the scan is done
-
     let peripheral = central.peripheral(&PeripheralId::from(BDAddr::from_str(address).unwrap())).await?;
 
     Ok(peripheral)
@@ -49,8 +63,21 @@ pub async fn bluetooth_read(address: String) {
     read_peripheral(&address).await.expect("Error");
 }
 
+#[napi]
+pub async fn disconnect(address: String) {
+    let peripheral = get_peripheral_internal(&address).await.expect("Could not get peripheral");
+
+    if peripheral.is_connected().await.expect("Could not get connection status") {
+        info!("Disconnecting from peripheral {:?}...", &address);
+        peripheral
+            .disconnect()
+            .await
+            .expect("Error disconnecting from BLE peripheral");
+    }
+}
+
 pub async fn read_peripheral(address: &str) -> Result<(), Box<dyn Error>> {
-    let peripheral = get_peripheral(address).await?;
+    let peripheral = get_peripheral_internal(address).await?;
     
     let properties = peripheral.properties().await?;
     let is_connected = peripheral.is_connected().await?;
@@ -89,7 +116,7 @@ Ok(())
 }
 
 pub async fn write_peripheral(address: &str, bytes: &[u8]) -> Result<(), Box<dyn Error>> {
-    let peripheral = get_peripheral(address).await?;
+    let peripheral = get_peripheral_internal(address).await?;
     
     let properties = peripheral.properties().await?;
     let is_connected = peripheral.is_connected().await?;
@@ -114,14 +141,6 @@ pub async fn write_peripheral(address: &str, bytes: &[u8]) -> Result<(), Box<dyn
                 peripheral.write(&characteristic, bytes, WriteType::WithoutResponse).await?;
             }
         }
-    }
-
-    if is_connected {
-        info!("Disconnecting from peripheral {:?}...", &local_name);
-        peripheral
-            .disconnect()
-            .await
-            .expect("Error disconnecting from BLE peripheral");
     }
     Ok(())
 }
