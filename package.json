@@ -1,6 +1,6 @@
 {
   "name": "@narwhallab/mufin",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "***This will help you connect your IoT project with Naver Clova***",
   "main": "index.js",
   "scripts": {

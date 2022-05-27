@@ -44,6 +44,11 @@ pub async fn get_peripheral(address: &str) -> Result<impl Peripheral, Box<dyn Er
     Ok(peripheral)
 }
 
+#[napi]
+pub async fn bluetooth_read(address: String) {
+    read_peripheral(&address).await.expect("Error");
+}
+
 pub async fn read_peripheral(address: &str) -> Result<(), Box<dyn Error>> {
     let peripheral = get_peripheral(address).await?;
     
