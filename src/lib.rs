@@ -8,6 +8,14 @@ use napi_derive::napi;
 use log::info;
 use simplelog::{TermLogger, Config};
 use futures::stream::StreamExt;
+use lazy_static::lazy_static;
+use tokio::runtime::Runtime;
+
+lazy_static! {
+    pub static ref CENTRAL: Adapter = Runtime::new().unwrap().block_on(async {
+        get_adapter().await
+    });
+}
 
 #[napi]
 pub fn init_logger() {
@@ -22,7 +30,7 @@ pub async fn bluetooth(address: String, message: String) {
 pub async fn get_adapter() -> Adapter {
     let manager = Manager::new().await.expect("Could not fetch manager");
 
-    let central = manager
+    let adapter = manager
         .adapters()
         .await
         .expect("Unable to fetch adapter list.")
@@ -30,12 +38,12 @@ pub async fn get_adapter() -> Adapter {
         .nth(0)
         .expect("No adapters are available now...");    // Fetch first adapter
 
-    central
+    adapter
 }
 
 #[napi]
 pub async fn scan() {
-    get_adapter().await
+    CENTRAL
         .start_scan(ScanFilter::default())
         .await
         .expect("Can't scan BLE adapter for connected devices...");
@@ -49,9 +57,7 @@ pub async fn get_peripheral(address: String) {
 }
 
 pub async fn get_peripheral_internal(address: &str) -> Result<impl Peripheral, Box<dyn Error>> {
-    let central = get_adapter().await;
-
-    let peripheral = central.peripheral(&PeripheralId::from(BDAddr::from_str(address).unwrap())).await?;
+    let peripheral = CENTRAL.peripheral(&PeripheralId::from(BDAddr::from_str(address).unwrap())).await?;
     let properties = peripheral.properties().await?;
     let is_connected = peripheral.is_connected().await?;
     let local_name = properties

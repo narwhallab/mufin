@@ -1,6 +1,6 @@
 [package]
 name = "mufin"
-version = "0.0.8"
+version = "0.0.9"
 edition = "2021"
 
 [lib]
@@ -9,6 +9,7 @@ crate-type=["cdylib"]
 
 [dependencies]
 btleplug = { version = "0.9.2", features = ["serde"] }
+lazy_static = "1.4.0"
 
 log = "0.4.17"
 simplelog = "0.12.0"
