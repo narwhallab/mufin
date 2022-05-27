@@ -2,6 +2,7 @@ use std::error::Error;
 use std::str::FromStr;
 use std::time::Duration;
 use std::thread;
+use async_once::AsyncOnce;
 use btleplug::api::{Central, Manager as _, Peripheral, ScanFilter, CharPropFlags, WriteType, BDAddr};
 use btleplug::platform::{Manager, PeripheralId, Adapter};
 use napi_derive::napi;
@@ -9,10 +10,9 @@ use log::info;
 use simplelog::{TermLogger, Config};
 use futures::stream::StreamExt;
 use lazy_static::lazy_static;
-use tokio::runtime::Runtime;
 
 lazy_static! {
-    pub static ref CENTRAL: Adapter = Runtime::new().unwrap().block_on(async {
+    pub static ref CENTRAL: AsyncOnce<Adapter> = AsyncOnce::new(async {
         get_adapter().await
     });
 }
@@ -43,7 +43,7 @@ pub async fn get_adapter() -> Adapter {
 
 #[napi]
 pub async fn scan() {
-    CENTRAL
+    CENTRAL.get().await
         .start_scan(ScanFilter::default())
         .await
         .expect("Can't scan BLE adapter for connected devices...");
@@ -57,7 +57,7 @@ pub async fn get_peripheral(address: String) {
 }
 
 pub async fn get_peripheral_internal(address: &str) -> Result<impl Peripheral, Box<dyn Error>> {
-    let peripheral = CENTRAL.peripheral(&PeripheralId::from(BDAddr::from_str(address).unwrap())).await?;
+    let peripheral = CENTRAL.get().await.peripheral(&PeripheralId::from(BDAddr::from_str(address).unwrap())).await?;
     let properties = peripheral.properties().await?;
     let is_connected = peripheral.is_connected().await?;
     let local_name = properties
