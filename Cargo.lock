@@ -450,9 +450,10 @@ dependencies = [
 
 [[package]]
 name = "mufin"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "btleplug",
+ "futures",
  "log",
  "napi",
  "napi-build",

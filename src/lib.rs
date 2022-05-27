@@ -5,8 +5,9 @@ use std::thread;
 use btleplug::api::{Central, Manager as _, Peripheral, ScanFilter, CharPropFlags, WriteType, BDAddr};
 use btleplug::platform::{Manager, PeripheralId};
 use napi_derive::napi;
-use log::trace;
+use log::info;
 use simplelog::{TermLogger, Config};
+use futures::stream::StreamExt;
 
 #[napi]
 pub fn init_logger() {
@@ -34,13 +35,52 @@ pub async fn get_peripheral(address: &str) -> Result<impl Peripheral, Box<dyn Er
         .await
         .expect("Can't scan BLE adapter for connected devices...");
 
-    trace!("Starting scan on {}...", central.adapter_info().await?);
+    info!("Starting scan on {}...", central.adapter_info().await?);
         
     thread::sleep(Duration::from_secs(5)); // Wait until the scan is done
 
     let peripheral = central.peripheral(&PeripheralId::from(BDAddr::from_str(address).unwrap())).await?;
 
     Ok(peripheral)
+}
+
+pub async fn read_peripheral(address: &str) -> Result<(), Box<dyn Error>> {
+    let peripheral = get_peripheral(address).await?;
+    
+    let properties = peripheral.properties().await?;
+    let is_connected = peripheral.is_connected().await?;
+    let local_name = properties
+        .unwrap()
+        .local_name
+        .unwrap_or(String::from("Unknown"));
+
+    if !is_connected {
+        info!("Connecting to peripheral {}...", &local_name);
+        peripheral.connect().await?;
+    }
+
+    let message = if is_connected { "succeeded" } else { "failed" };
+
+    info!("Connecting to peripherial: {} has {}", &local_name, message);
+
+    peripheral.discover_services().await?;
+    for service in peripheral.services() {
+        for characteristic in service.characteristics {
+            if characteristic.properties.contains(CharPropFlags::NOTIFY) {
+                println!("Subscribing to characteristic {:?}", characteristic.uuid);
+                peripheral.subscribe(&characteristic).await?;
+                let mut notification_stream =
+                    peripheral.notifications().await?.take(4);
+                while let Some(data) = notification_stream.next().await {
+                    info!(
+                        "Received data from {:?} [{:?}]: {:?}",
+                        local_name, data.uuid, data.value
+                    );
+                }
+            }
+        }
+}
+Ok(())
 }
 
 pub async fn write_peripheral(address: &str, bytes: &[u8]) -> Result<(), Box<dyn Error>> {
@@ -54,13 +94,13 @@ pub async fn write_peripheral(address: &str, bytes: &[u8]) -> Result<(), Box<dyn
         .unwrap_or(String::from("Unknown"));
 
     if !is_connected {
-        trace!("Connecting to peripheral {}...", &local_name);
+        info!("Connecting to peripheral {}...", &local_name);
         peripheral.connect().await?;
     }
 
     let message = if is_connected { "succeeded" } else { "failed" };
 
-    trace!("Connecting to peripherial: {} has {}", &local_name, message);
+    info!("Connecting to peripherial: {} has {}", &local_name, message);
 
     peripheral.discover_services().await?;
     for service in peripheral.services() {
@@ -72,7 +112,7 @@ pub async fn write_peripheral(address: &str, bytes: &[u8]) -> Result<(), Box<dyn
     }
 
     if is_connected {
-        trace!("Disconnecting from peripheral {:?}...", &local_name);
+        info!("Disconnecting from peripheral {:?}...", &local_name);
         peripheral
             .disconnect()
             .await
