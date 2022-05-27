@@ -51,10 +51,22 @@ pub async fn get_peripheral(address: String) {
 pub async fn get_peripheral_internal(address: &str) -> Result<impl Peripheral, Box<dyn Error>> {
     let central = get_adapter().await;
 
-    info!("Starting scan on {}...", central.adapter_info().await?);
-        
     let peripheral = central.peripheral(&PeripheralId::from(BDAddr::from_str(address).unwrap())).await?;
+    let properties = peripheral.properties().await?;
+    let is_connected = peripheral.is_connected().await?;
+    let local_name = properties
+        .unwrap()
+        .local_name
+        .unwrap_or(String::from("Unknown"));
 
+    if !is_connected {
+        info!("Connecting to peripheral {}...", &local_name);
+        peripheral.connect().await?;
+    }
+
+    let message = if is_connected { "succeeded" } else { "failed" };
+
+    info!("Connecting to peripherial: {} has {}", &local_name, message);
     Ok(peripheral)
 }
 
@@ -78,22 +90,6 @@ pub async fn disconnect(address: String) {
 
 pub async fn read_peripheral(address: &str) -> Result<(), Box<dyn Error>> {
     let peripheral = get_peripheral_internal(address).await?;
-    
-    let properties = peripheral.properties().await?;
-    let is_connected = peripheral.is_connected().await?;
-    let local_name = properties
-        .unwrap()
-        .local_name
-        .unwrap_or(String::from("Unknown"));
-
-    if !is_connected {
-        info!("Connecting to peripheral {}...", &local_name);
-        peripheral.connect().await?;
-    }
-
-    let message = if is_connected { "succeeded" } else { "failed" };
-
-    info!("Connecting to peripherial: {} has {}", &local_name, message);
 
     peripheral.discover_services().await?;
     for service in peripheral.services() {
@@ -105,8 +101,8 @@ pub async fn read_peripheral(address: &str) -> Result<(), Box<dyn Error>> {
                     peripheral.notifications().await?.take(4);
                 while let Some(data) = notification_stream.next().await {
                     info!(
-                        "Received data from {:?} [{:?}]: {:?}",
-                        local_name, data.uuid, data.value
+                        "Received data from <somewhere> [{:?}]: {:?}",
+                        data.uuid, data.value
                     );
                 }
             }
@@ -118,22 +114,6 @@ Ok(())
 pub async fn write_peripheral(address: &str, bytes: &[u8]) -> Result<(), Box<dyn Error>> {
     let peripheral = get_peripheral_internal(address).await?;
     
-    let properties = peripheral.properties().await?;
-    let is_connected = peripheral.is_connected().await?;
-    let local_name = properties
-        .unwrap()
-        .local_name
-        .unwrap_or(String::from("Unknown"));
-
-    if !is_connected {
-        info!("Connecting to peripheral {}...", &local_name);
-        peripheral.connect().await?;
-    }
-
-    let message = if is_connected { "succeeded" } else { "failed" };
-
-    info!("Connecting to peripherial: {} has {}", &local_name, message);
-
     peripheral.discover_services().await?;
     for service in peripheral.services() {
         for characteristic in service.characteristics {
