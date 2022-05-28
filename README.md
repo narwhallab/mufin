@@ -7,12 +7,17 @@
 - Nodejs and Npm
 
 ### Methods
-1. use `npm install @narwhallab/mufin` command to install the project
+1. Install mufin with `npm install @narwhallab/mufin`
 2. use `@narwhallab/mufin` in nodejs
-```js
-let addon = require('@narwhallab/mufin')
+```ts
+import mufin from '@narwhallab/mufin'
 
-addon.bluetooth("<bluetooth address>", "Hello, World")  // Sends "Hello, World" to address
+mufin.scanBluetooth().then(() => {
+    mufin.connectBluetooth("<btaddr>").then(async () => {
+        await mufin.writeBluetooth("<btaddr>", "My Message");
+        await mufin.disconnectBluetooth("<btaddr>")
+    })
+})
 ```
 
 ## TODO
