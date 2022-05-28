@@ -1,6 +1,6 @@
 {
   "name": "@narwhallab/mufin",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Bluetooth based IoT connection library",
   "main": "index.node",
   "scripts": {

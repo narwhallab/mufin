@@ -1,5 +1,5 @@
 use std::{error::Error, str::FromStr};
-use btleplug::{platform::{Adapter, Manager, PeripheralId}, api::{Manager as _, Central as _, CharPropFlags, WriteType, Peripheral, BDAddr}};
+use btleplug::{platform::{Adapter, Manager}, api::{Manager as _, Central as _, CharPropFlags, WriteType, Peripheral, BDAddr}};
 use futures::StreamExt;
 use log::info;
 
@@ -20,8 +20,13 @@ pub async fn get_adapter() -> Adapter {
 pub async fn connect_peripheral(address: &str) -> Result<impl Peripheral, Box<dyn Error>> {
     let peripheral = CENTRAL.get()
         .await
-        .peripheral(&PeripheralId::from(BDAddr::from_str(address).unwrap())).await?;
-    
+        .peripherals()
+        .await?
+        .iter()
+        .find(|p| p.address().eq(&BDAddr::from_str(address).unwrap()))
+        .expect("Error")
+        .to_owned();
+
     let properties = peripheral.properties().await?;
     let is_connected = peripheral.is_connected().await?;
     let local_name = properties
